@@ -1,0 +1,19 @@
+let addGroup = IdentityDirectoryEvents
+| where Application == "Active Directory"
+| where ActionType == "Group Membership changed"
+| where DestinationDeviceName != ""
+| where TargetDeviceName == ""
+| extend addGroup = tostring(parse_json(AdditionalFields).["TO.GROUP"])
+| where addGroup  == "GroupNameHere"
+| project Timestamp, addGroup, Target_Account = TargetAccountDisplayName,TargetAccountUpn, Actor = AccountName, AdditionalFields, ReportId;
+let removeGroup = IdentityDirectoryEvents
+| where Application == "Active Directory"
+| where ActionType == "Group Membership changed"
+| where DestinationDeviceName != ""
+| where TargetDeviceName == ""
+| extend removeGroup = tostring(parse_json(AdditionalFields).["FROM.GROUP"])
+| where removeGroup == "GroupNameHere"
+| project Timestamp, removeGroup, Target_Account = TargetAccountDisplayName,TargetAccountUpn, Actor = AccountName, AdditionalFields, ReportId;
+addGroup
+| join kind=leftouter removeGroup on Target_Account
+| project addGroup, removeGroup, Target_Account, addGroupTimeStamp = Timestamp, removeGroupTimeStamp = Timestamp1
