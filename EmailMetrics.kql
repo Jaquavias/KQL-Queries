@@ -1,0 +1,14 @@
+let JunkedCombo = EmailEvents
+| extend InitialCategory = iff(DeliveryAction in ("Junked", "Unknown"), "Junked", DeliveryAction) // is this right?
+| summarize InitialCount = count() by InitialCategory; // get the intial count
+EmailEvents //
+| extend LatestCategory = iff(LatestDeliveryAction in ("Junked", "Unknown"), "Junked", LatestDeliveryAction)
+| summarize LatestCount = count() by LatestCategory
+| join kind=fullouter JunkedCombo on $left.LatestCategory == $right.InitialCategory
+| project
+    Category = coalesce(LatestCategory, InitialCategory), // is coalesce right??
+    LatestCount = coalesce(LatestCount, 0),
+    InitialCount = coalesce(InitialCount, 0)
+| sort by LatestCount desc
+// | render columnchart
+| render table
