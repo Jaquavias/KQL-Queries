@@ -1,0 +1,244 @@
+// **Joining Tables Together with Join & Union**
+
+// General Rules of Join
+// -Left datatable is the one that comes before the Join statment
+// -Try to keep smaller datatable on the left 
+// -Have to join on columns with like names in both tables
+//      -If no duplicate column name exists you must 1) rename a column or 2) force the join by indicating $left and $right
+// -Duplicate column names will be followed by a 1 for right table values
+// -You can join on as many colum names as you would like
+// -You can join as many tables as you want, as long as it is one at a time
+// -KQL uses the inner unique join by defualt unless otherwise specified
+
+// General Rules of Union
+// -Will combine two tables into one, not based on a vlue but instead will append one to another
+
+//Forcing a join
+IdentityInfo
+| project-rename objid = AccountObjectId
+| join IdentityLogonEvents on $left.objid == $right.AccountObjectId
+| take 10
+
+
+// Union
+//  -Turns two tables into one large table of all the values
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| union rightTable
+
+// Types of Joins
+
+// -innerunique(defualt)
+//      -All columns from both tables
+//      -All deduplicated rows from left table that match the right table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join rightTable on id;
+
+// -inner
+//      -All colums from both tables
+//      -Matching rows from both tables
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=inner rightTable on id;
+
+// -leftouter
+//      -All columns from both tables
+//      -All data from left table and matching rows from the right table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=leftouter rightTable on id;
+
+// -rightouter
+//      -All columns from both tables
+//      -All data from right table and matching rows from the left table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=rightouter rightTable on id;
+
+// -fullouter
+//      -All columns from both tables
+//      -All data from both tables and unmatched rows filled in with "Null"
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=fullouter rightTable on id;
+
+// -leftsemi
+//      -All columns from the left table
+//      -All data from the left table that match the right table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=leftsemi rightTable on id;
+
+// -rightsemi
+//      -All columns from the right table
+//      -All data from the right table that match the left table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=rightsemi rightTable on id;
+
+// -lefanti
+//      -All colums from the left table
+//      -Remove any rows that match and return the remaining data from the left table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=leftsemi rightTable on id;
+
+// -rightanti
+//      -All colums from the right table
+//      -Remove any rows that match and return the remaining data from the right table
+let leftTable = datatable (id:int, value:string)
+[
+    0, "Hello",
+    0, "World",
+    1, 'Space',
+    1, 'Case',
+    2, 'Hello'
+];
+let rightTable = datatable (id:int, value:string)
+[
+    0, "World",
+    0, "Test",
+    1, 'Hello',
+    1, 'Cars',
+    2, 'Mulan'
+];
+leftTable
+| join kind=rightanti  rightTable on id;
+
+
