@@ -1,0 +1,26 @@
+// This query will find all instances of an ASR rule blocking/Auditing something on the specified device
+// can be used to quickly find the rule that is blocking the application without going into the devices timeline
+
+
+let Device_Names = pack_array("Enter list here");
+let Device_Name = "enter device name here";
+DeviceEvents
+| where ActionType contains "ASR"
+| where ActionType != "AsrCustomRuleBlocked"
+| where DeviceName contains Device_Name
+// | where DeviceName has_any (Device_Names)
+
+
+
+
+// ActionType correlated to the actual ASR rule name
+// AsrLsassCredentialTheftBlocked --> Block credential stealing from the Windows local security authority subsystem
+// AsrOfficeMacroWin32ApiCallsAudited --> Block Win32 API calls from Office macros
+// AsrOfficeChildProcessBlocked --> Block all Office applications from creating child processes
+// AsrExecutableOfficeContentBlocked --> Block Office applications from creating executable content
+// AsrOfficeCommAppChildProcessAudited --> Block Office communication application from creating child processes
+// AsrOfficeProcessInjectionAudited --> Block Office applications from injecting code into other processes
+// AsrUntrustedExecutableBlocke --> Block executable files from running unless they meet a prevalence, age, or trusted list criterion
+// AsrExecutableEmailContentBlocked --> Block executable content from email client and webmail
+// AsrVulnerableSignedDriverBlocked --> Block abuse of exploited vulnerable signed drivers (Device)
+// AsrAdobeReaderChildProcessBlocked --> Block Adobe Reader from creating child processes
