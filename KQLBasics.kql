@@ -1,0 +1,129 @@
+// **General KQL Table Expressions & Query Basics**
+
+// Important to keep in mind that most data sets only contain 30 days of data but you can set your search date back as far as 6 months
+// this is becuase a few data sets like DeviceEvents store data for 6 months. But for tables like EmailEvents that only store for 30 days
+// will return nothing if you go past that 30 day deadline even though it shows you can do 6 months
+
+// Schemas and the values they contain
+
+// Queries are made from the Schema on the right pane with each title being its own table i.e "AlertEvidence, "EmailEvents", etc...
+// Expanding a schema's title out will then show all the columns contained in the table and the type of value contained
+//      - "abc" = String
+//      - "#" = Int
+//      - "B" = Boolean
+//      - "{}" = Json
+//      - "Calendar Icon" = Date/Time
+// Schemas ending in "KB" stand for knowledge base and will give descriptions of the corresponding schemas output
+
+
+// How to create a query
+
+// Start by selecting one of the shema titles you would like to query and type it into a new Advanced Hunting Page like below
+EmailEvents // To run this query you can either select it and hit "Run Query" in the top right or "crtl + enter"
+
+// This query will grab all data in the email events scheme for the selected time period next to the run button 
+// With a base schema selected you can now start using table expressions to filter down your data to better fit your needs
+
+// Common Table Expressions
+
+// *take* X
+//  - This will only pull X number of rows from said time period instead of all rows available
+//  - Good for visualizing what columns you are working with to better filter out your data
+EmailEvents
+| take 10
+
+// *where* (Column Name) (operation) (paramter)
+//  - Operations
+//      - "==" = Column value is Exact match to paramter (case sensitive)
+//      - "contains" =  Column value contains paramter (non case sensitive)
+//      - "endswith" = Columm value ends in the paramter (non case sensitive)
+//      - "startswith" = Column value starts in the paramter
+//      - "in" = Column values equals any one element in the paramter list (case sensitive)
+//      **Has operators split the column value into individual terms, splitting at "." and spaces" instead of treating the value as a whole**
+//      - "has" = Any Column vlaue term contains the full paramter term as an individual term (non case sensitive)
+//      - "hasprefix" = Any Column value term starts with the paramter term (non case sensitive)
+//      - "hassuffix" = Any Column value term ends with the paramter term (non case sensitive)
+//      **All of the above operators can have an "!" added to the front to make it "Not" true**
+//      **All non case sensitive operators can have "_cs" added to the end to make it case sensitive**
+//      **All case sensitive operators can have "~" added to the end to make it non case sensitive**
+//      - "matches regex" = Column values are filteres based on regex expression (case sensitive) (Cannot be modified with "!", "_cs", or "~")
+EmailEvents
+| where SenderFromAddress contains "bhspecialty.com"
+| take 10
+
+
+
+// *project-keep* (Column names here sperated by commas)
+//  - This will only project the seleted columns instead of all available columns
+//  - Good for filtering out unsed column
+EmailEvents
+| take 10
+| project-keep NetworkMessageId, SenderDisplayName, RecipientEmailAddress, Subject
+
+// *project-reorder* (Column name here seperated by commas)
+//  - This will reorder the columns depending on the order they come after the expression
+//  - If only one column name is given it will place that column at the start and shift all others down one
+EmailEvents
+| take 10
+| project-reorder NetworkMessageId, InternetMessageId
+
+// *project-away* (Colum name here seperated by commas)
+//  - This will remove the designated columns from the table and keep all othersAlertEvidence
+EmailEvents
+| take 10 
+| project-away SenderDisplayName
+
+// *project-rename* (new_name = exisiting column name)
+//  - This will allow you to rename certain columns but still produce all non renmaed columns as well
+EmailEvents
+| take 10 
+| project-rename Time_Test = Timestamp
+
+// *project* (column names seperated by commas)
+//  - This combines both project-keep and project-rename into one expression
+//  - Allows you to select what columns to keep and rename tham at the same time
+EmailEvents
+| take 10
+| project testv2 = Timestamp, NetworkMessageId, InternetID = NetworkMessageId
+
+
+// *distinct* (column names sperated by commas)
+//  - Distinct will take one or more column name in and dedupe the data so it only returns unique values
+//  - if you are using distinct for multiple columns (example SenderDisplayName, Timestamp) KQL will take each unique value 
+//    in the rightmost (Timestamp) field and compares it to the left field SenderDisplayName. B/c works left to right, not right to left. 
+EmailEvents
+| take 10
+| distinct SenderDisplayName, Timestamp
+
+
+// *count*
+//  - This will count the total number of rows contained in your table, meaning it should be the last expression used in your query
+EmailEvents
+| where SenderFromDomain contains "domain"
+| count
+
+// *count()* by (column name)
+//  - "count()" is an aggregation function - making it work in a different way than "count". 
+//    Instead of counting all rows within a table, it will instead take in a column name and count the occurrence 
+//    of each unique value in that column. Since it is an aggregation function, it has to be invoked by summarize as in "summarize count()"
+EmailEvents
+| summarize count() by LatestDeliveryAction
+
+
+// *extend* (Column name to create) (exisiting column name (not required)) (Expression)
+//  - "extend" can be used to rename an existing column in the middle of a query instead of using "project-rename"
+//    it can also be used to make whole new columns with a preset value or take in the data from two columns into one with
+//    with a mathamatical expression such as "+" or "-"
+EmailEvents
+| extend LatestDeliveryAction = DeliveryAction
+
+// *let* (name) = expression
+//  - "let" is used to define variables in your KQL query, these variables can be something as simple as an
+//     int or a string all the way to an entire data table. These variables can be called on later in your queries
+//     or used to define data tables you would like to work with. All let statments need to end in a ";"
+let domain = "domain";
+let emailQuery = EmailEvents
+| where SenderFromAddress contains domain;
+emailQuery
+| join EmailUrlInfo on NetworkMessageId
+| take 10
