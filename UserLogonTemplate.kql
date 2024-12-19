@@ -1,0 +1,17 @@
+let EmailList = pack_array(
+    "Email List goes here"
+);
+let SingleEmail = "email here";
+IdentityInfo
+| where AccountUpn == SingleEmail
+//| where AccountUpn has_any (EmailList)
+| project AccountObjectId, AccountUpn, AccountName, DistinguishedName, IsAccountEnabled
+| join IdentityLogonEvents on AccountObjectId
+| project Timestamp, AccountObjectId, AccountUpn, AccountName, DistinguishedName, ActionType, Application, LogonType, Protocol, DeviceName, DeviceType, OSPlatform, IPAddress, Port, DestinationDeviceName, DestinationIPAddress, DestinationPort, Location, ISP, AdditionalFields, UncommonForUser, LastSeenForUser 
+//| distinct DestinationDeviceName, LogonType (Distinct what you want to see here)
+
+//Include this to get all device events within 10 minutes of each logon
+//| project-rename LogonTimeStamp = Timestamp
+//| join kind=inner DeviceEvents on DeviceName
+//| where Timestamp between (datetime_add('minute',-5,LogonTimeStamp) .. datetime_add('minute', 5, LogonTimeStamp))
+//| take 100
