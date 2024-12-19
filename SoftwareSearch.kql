@@ -1,4 +1,4 @@
-// Find all unlicensed IDEs on managed devices as an example
+// Find all unlicensed IDEs on managed devices as an example can be done for any software/vendor
 let softwareVendors = pack_array("Sublimetext", "Spyder", "Rstudio", "Jetbrains", "Eclipse");
 let softwareNames = pack_array("Atom", "anaconda3"); //added anaconda
 DeviceTvmSoftwareInventory
