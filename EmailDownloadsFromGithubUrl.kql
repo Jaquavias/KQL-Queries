@@ -1,0 +1,10 @@
+let GitHubUrls = UrlClickEvents
+| where UrlChain contains "github.com";
+DeviceFileEvents
+| where isnotempty(FileOriginUrl)
+| extend Url = FileOriginUrl
+| where Url contains "github.com"
+| join GitHubUrls on Url
+| join EmailEvents on NetworkMessageId
+| project Timestamp, ReportId, AccountUpn, NetworkMessageId, Url = Url1,UrlChain, SHA1, SenderDisplayName, SenderFromDomain, SenderFromAddress 
+
