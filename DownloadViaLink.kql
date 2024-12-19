@@ -1,0 +1,31 @@
+//Browser was opened via a url click
+let BrowserGoBrrr = DeviceEvents
+| where Timestamp > ago(24h)
+| where ActionType == "BrowserLaunchedToOpenUrl"
+| project Timestamp, DeviceId, DeviceName, ActionType, RemoteUrl = tolower(RemoteUrl), InitiatingProcessAccountName; 
+//Means file was downloaded from the internet as it has an associating link
+let DownloadFromUrl = DeviceFileEvents
+| where Timestamp > ago(24h)
+| where isnotempty(FileOriginUrl)
+| project Timestamp, FileName, DeviceId, DeviceName, ActionType, RemoteUrl=tolower(FileOriginUrl), FileOriginReferrerUrl;
+//Smart Screen Warnings and what they were for
+let SmartScreenBlock = DeviceEvents
+| where Timestamp > ago(24h)
+| where ActionType == "SmartScreenUrlWarning"
+| extend AdditionalFields = todynamic(AdditionalFields)
+| project DeviceId, DeviceName, RemoteUrl = tolower(RemoteUrl), SmartScreenAction = tostring(AdditionalFields.Experience);
+//Gets the whole url chain from one email
+let UrlClicks = UrlClickEvents
+| where Timestamp > ago(24h)
+| mv-expand todynamic(UrlChain) to typeof(string)
+| project NetworkMessageId, RemoteUrl = tolower(UrlChain);
+let DeliveryActions = EmailEvents
+| project NetworkMessageId, DeliveryAction, DeliveryLocation, ThreatTypes, DetectionMethods, ConfidenceLevel, OrgLevelAction, OrgLevelPolicy, LatestDeliveryLocation, LatestDeliveryAction;
+BrowserGoBrrr
+| join DownloadFromUrl on DeviceId, RemoteUrl
+| join kind=leftouter SmartScreenBlock on DeviceId, RemoteUrl
+| extend SmartScreenWarning = SmartScreenAction
+| join kind=leftouter UrlClicks on RemoteUrl
+| join kind=leftouter DeliveryActions on NetworkMessageId
+| project Timestamp, DeviceId, DeviceName, RemoteUrl, InitiatingProcessAccountName, FileName, FileAction = ActionType1, SmartScreenAction, NetworkMessageId, DeliveryAction, DeliveryLocation, ThreatTypes, DetectionMethods, ConfidenceLevel, OrgLevelAction, OrgLevelPolicy, LatestDeliveryLocation, LatestDeliveryAction 
+

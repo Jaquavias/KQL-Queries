@@ -1,0 +1,18 @@
+let Destination = AlertEvidence
+| where Title == "Suspected brute-force attack (LDAP)"
+| where AccountName == ""
+| distinct AlertId, DeviceName;
+let Source = AlertEvidence
+| where Title == "Suspected brute-force attack (LDAP)"
+| where AccountName == ""
+| distinct AlertId, LocalIP;
+let Users = AlertEvidence
+| where Title == "Suspected brute-force attack (LDAP)"
+| where AccountName != "";
+Destination
+| join kind=fullouter Source on AlertId
+| where DeviceName !="" and LocalIP != ""
+| join kind = leftouter Users on AlertId
+| where LocalIP != ""
+| extend serverLocation = iif(LocalIP in ("ASA IPS HERE"), "ASA", "")
+| where serverLocation != "ASA"

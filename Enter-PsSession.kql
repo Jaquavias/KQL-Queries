@@ -1,0 +1,6 @@
+DeviceEvents
+| where ActionType contains "Powershell"
+| extend CommandDynamic = parse_json(AdditionalFields)
+| extend ConfigManager = iif(CommandDynamic.Command contains "SessionOption", "ConfigManager", "PS Window") //PS Window vs Logmein
+| project Timestamp, DeviceName, Command = CommandDynamic.Command, InitiatingProcessAccountName, ConfigManager
+| where Command contains "Enter-PSsession"

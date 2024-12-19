@@ -1,0 +1,10 @@
+// Alerts to the addition of users to a designated sensitive group
+IdentityDirectoryEvents
+| where Application == "Active Directory"
+| where ActionType == "Group Membership changed"
+| where DestinationDeviceName != ""
+| where TargetDeviceName == ""
+| extend addGroup = tostring(parse_json(AdditionalFields).["TO.GROUP"])
+| where addGroup == "Group Name"
+| where AdditionalFields !contains "FROM.GROUP"
+| project Timestamp, addGroup, Target_Account = TargetAccountDisplayName,TargetAccountUpn, Actor = AccountName, AdditionalFields, ReportId
