@@ -1,0 +1,14 @@
+IntuneDevices
+| where OS == "Windows"
+    and ManagedBy == "Co-managed"
+| where Model != "Virtual Machine"
+| extend convertedDate = todatetime(LastContact)
+| where convertedDate > ago(30d)
+| extend DeviceName = tolower(DeviceName)
+| distinct DeviceName
+| join kind = leftanti (
+    DeviceInfo
+    | distinct DeviceName
+    | extend DeviceName = replace_string(DeviceName, "domain", "")
+    | extend DeviceName = tolower(DeviceName)
+) on DeviceName

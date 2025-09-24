@@ -1,0 +1,15 @@
+let SearchString = "AnyFile";
+DeviceFileEvents
+| where FileName contains SearchString
+| where InitiatingProcessAccountDomain != "nt authority"
+| join kind = leftouter (
+    EmailAttachmentInfo
+    | join DeviceFileEvents on FileName
+    | where FileName !contains "image0"
+) on FileName
+| extend Emailed = iff(isnotempty(RecipientEmailAddress), "Emailed", "")
+| join kind = innerunique (
+    EmailEvents
+) on NetworkMessageId
+| project TimeGenerated, Emailed, ActionType, DeviceName, FileName, FolderPath, InitiatingProcessAccountUpn, SHA1, SHA256, MD5, RecipientEmailAddress, SenderFromAddress, NetworkMessageId, Subject, Cc
+ 

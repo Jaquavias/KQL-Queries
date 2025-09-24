@@ -1,0 +1,8 @@
+IdentityLogonEvents
+| where ActionType == "LogonFailed"
+| where Location !in ("US", "IN")
+| where FailureReason !in ("Strong Authentication is required.", "This occurred due to Keep me signed in interrupt when the user was signing in.")
+| distinct AccountDisplayName, Location
+| summarize DistinctUser=count() by AccountDisplayName
+| where DistinctUser > 3
+ 

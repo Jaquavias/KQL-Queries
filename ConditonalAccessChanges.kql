@@ -1,0 +1,57 @@
+AuditLogs
+| where OperationName == "Update conditional access policy"
+| extend modifiedProperties = TargetResources[0].modifiedProperties
+| extend policyName = tostring(parse_json(tostring(modifiedProperties[0].newValue)).displayName)
+| extend oldJson = parse_json(tostring(modifiedProperties[0].oldValue))
+| extend newJson = parse_json(tostring(modifiedProperties[0].newValue))
+| extend
+    stateChange = iff(
+                  tostring(oldJson.state) != tostring(newJson.state), 
+                  strcat("State changed from ", oldJson.state, " to ", newJson.state),
+                  ""
+              ),
+    usersChange = iff(
+                  tostring(oldJson.conditions.users.includeUsers) != tostring(newJson.conditions.users.includeUsers), 
+                  strcat("Included users changed from ", oldJson.conditions.users.includeUsers, "to ", newJson.conditions.users.includeUsers),
+                  ""
+              ),
+    applicationChangeInclusions = iff(
+                                  tostring(oldJson.conditions.applications.includeApplications) != tostring(newJson.conditions.applications.includeApplications),
+                                  strcat("Included applications changed from", oldJson.conditions.applications.includeApplications, " to", newJson.conditions.applications.includeApplications),
+                                  ""
+                              ),
+    applicationChangeExclusions = iff(
+                                  tostring(oldJson.conditions.applications.excludeApplications) != tostring(newJson.conditions.applications.excludeApplications),
+                                  strcat("Excluded applications changed from", oldJson.conditions.applications.excludeApplications, " to", newJson.conditions.applications.excludeApplications),
+                                  ""
+                              ),
+    platformChangeExclusions = iff(
+                               tostring(oldJson.conditions.platforms.excludePlatforms) != tostring(newJson.conditions.platforms.excludePlatforms),
+                               strcat("Excluded Platforms Changed from", oldJson.conditions.platforms.excludePlatforms, " to", newJson.conditions.platforms.excludePlatforms),
+                               ""
+                           ),
+    controlsChange = iff(
+                     tostring(oldJson.grantControls.builtInControls) != tostring(newJson.grantControls.builtInControls),
+                     strcat("Controls changed from", oldJson.grantControls.builtInControls, " to", newJson.grantControls.builtInControls),
+                     ""
+                 ),
+    modifiedTimeChange = iff(
+                         tostring(oldJson.modifiedDateTime) != tostring(newJson.modifiedDateTime), 
+                         "Policy modified",
+                         ""
+                     )
+| project
+    TimeGenerated,
+    PolicyName = policyName,
+    ModifiedBy = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName),
+    Changes = pack_array(
+              stateChange,
+              usersChange,
+              applicationChangeInclusions,
+              applicationChangeExclusions,
+              platformChangeExclusions,
+              controlsChange,
+              modifiedTimeChange
+          )
+| mv-expand Changes
+| where isnotempty(Changes)

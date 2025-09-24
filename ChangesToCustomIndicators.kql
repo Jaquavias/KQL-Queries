@@ -1,0 +1,11 @@
+CloudAppEvents
+| where parse_json(RawEventData).Workload contains('Defender')
+| where ActionType has_any ("DeleteIndicator", "EditIndicator", "AddIndicator")
+| extend Type = parse_json(RawEventData).IndicatorType
+| extend Title = parse_json(RawEventData).IndicatorTitle
+| extend Description = parse_json(RawEventData).IndicatorDescription
+| extend Action = parse_json(RawEventData).IndicatorAction
+| extend Severity = parse_json(RawEventData).IndicatorAlertSeverity
+| extend GenerateAlerts = parse_json(RawEventData).IndicatorGenerateAlerts
+| extend Value = parse_json(RawEventData).IndicatorValue
+| project Timestamp, ActionType, Type, Title, Description, Action, Value, GenerateAlerts, Severity, AccountDisplayName, AccountObjectId, ReportId
